@@ -1,17 +1,16 @@
 {
-  "name": "scripts",
+  "name": "sui-fusion-scripts",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "swap.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "@mysten/sui": "^1.37.0",
+    "dotenv": "^17.2.1",
     "ethers": "^6.15.0"
   }
 }
