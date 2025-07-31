@@ -1,0 +1,22 @@
+{
+  "name": "sui-fusion-1inch-mvp",
+  "version": "1.0.0",
+  "description": "Sui Fusion+ Cross-Chain Swap dApp",
+  "scripts": {
+    "start": "cd ui && npm start",
+    "build": "cd ui && npm run build",
+    "test": "cd ui && npm test",
+    "test:contracts": "cd docs/htlc_escrow && sui move test",
+    "simulate": "cd scripts && node swap.js"
+  },
+  "keywords": ["sui", "fusion", "cross-chain", "swap", "defi"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@mysten/bcs": "^1.7.0",
+    "@mysten/sui": "^1.37.1",
+    "dotenv": "^17.2.1",
+    "ethers": "^6.15.0",
+    "fs": "^0.0.1-security"
+  }
+}

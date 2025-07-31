@@ -11,6 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "dotenv": "^17.2.1",
-    "ethers": "^6.15.0"
+    "ethers": "^6.15.0",
+    "@mysten/sui": "^1.15.0",
+    "axios": "^1.7.7"
   }
 }

@@ -166,7 +166,7 @@ module htlc_escrow::escrow {
 
     // Get remaining amount in escrow
     public fun get_remaining_amount<T>(escrow: &Escrow<T>): u64 {
-        escrow.amount - escrow.total_filled
+        balance::value(&escrow.balance)
     }
 
     // Check if escrow is fully filled
@@ -177,5 +177,22 @@ module htlc_escrow::escrow {
     // Get auction parameters
     public fun get_auction_params<T>(escrow: &Escrow<T>): AuctionParams {
         escrow.auction_params
+    }
+
+    // Create auction parameters (for testing and external use)
+    public fun create_auction_params(
+        min_amount: u64,
+        max_amount: u64,
+        start_time: u64,
+        end_time: u64,
+        resolver_fee: u64
+    ): AuctionParams {
+        AuctionParams {
+            min_amount,
+            max_amount,
+            start_time,
+            end_time,
+            resolver_fee,
+        }
     }
 }
