@@ -88,6 +88,41 @@ body {
   text-transform: uppercase;
 }
 
+.backend-status {
+  margin-top: 4px;
+  font-size: 0.75rem;
+}
+
+.status-indicator {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.status-indicator.loading {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+.status-indicator.connected {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.status-indicator.disconnected {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.contract-warning {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  margin-left: 4px;
+}
+
 /* Main Content */
 .main-content {
   flex: 1;
@@ -1612,4 +1647,42 @@ body {
   .modal-actions {
     flex-direction: column;
   }
+}
+
+/* Add loading spinner styles for quote display */
+.loading-quote {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #888;
+}
+
+.spinner-small {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #333;
+  border-top: 2px solid #0066cc;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-indicator {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #333;
+  border-top: 2px solid #0066cc;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

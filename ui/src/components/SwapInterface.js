@@ -27,7 +27,7 @@ const SwapInterface = memo(({
   const [balanceToastShown, setBalanceToastShown] = useState(false);
 
   // Fetch SUI balance
-  const { data: suiBalance, isLoading: balanceLoading, error: balanceError, refetch: refetchBalance } = useSuiClientQuery(
+  const { data: suiBalance, isLoading: balanceLoading, refetch: refetchBalance } = useSuiClientQuery(
     'getBalance',
     {
       owner: currentAccount?.address,
@@ -76,25 +76,71 @@ const SwapInterface = memo(({
     setBalanceToastShown(false);
   }, [currentAccount?.address]);
 
-  // Estimated output calculation (mock)
-  const estimatedOutput = useMemo(() => {
-    const inputAmount = parseFloat(selectedTokens.from.amount) || 0;
-    if (inputAmount <= 0) return '0.00';
+  // Estimated output calculation using real 1inch quotes
+  const [estimatedOutput, setEstimatedOutput] = useState('0.00');
+  const [isLoadingQuote, setIsLoadingQuote] = useState(false);
+
+  // Add function to get real-time quote (moved before useEffect)
+  const getRealTimeQuote = useCallback(async (fromToken, toToken, amount) => {
+    if (!amount || amount <= 0) return null;
     
-    // Mock conversion rates
-    const rates = {
-      'ETH-SUI': 1.42,
-      'ETH-USDC': 2800,
-      'SUI-ETH': 0.70,
-      'SUI-USDC': 1.98,
-      'USDC-ETH': 0.000357,
-      'USDC-SUI': 0.505
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/quote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fromToken: fromToken,
+          toToken: toToken,
+          amount: amount.toString()
+        })
+      });
+      
+      if (response.ok) {
+        const quote = await response.json();
+        return quote.estimatedOutput;
+      }
+    } catch (error) {
+      console.error('Error fetching real-time quote:', error);
+    }
+    
+    return null;
+  }, []);
+
+  // Fetch real-time quote when inputs change
+  useEffect(() => {
+    const fetchQuote = async () => {
+      const inputAmount = parseFloat(selectedTokens.from.amount) || 0;
+      if (inputAmount <= 0) {
+        setEstimatedOutput('0.00');
+        return;
+      }
+
+      setIsLoadingQuote(true);
+      try {
+        const quote = await getRealTimeQuote(
+          selectedTokens.from.symbol,
+          selectedTokens.to.symbol,
+          inputAmount
+        );
+        
+        if (quote) {
+          setEstimatedOutput(quote);
+        } else {
+          setEstimatedOutput('Error');
+        }
+      } catch (error) {
+        console.error('Quote fetch error:', error);
+        setEstimatedOutput('Error');
+      } finally {
+        setIsLoadingQuote(false);
+      }
     };
-    
-    const pair = `${selectedTokens.from.symbol}-${selectedTokens.to.symbol}`;
-    const rate = rates[pair] || 1;
-    return (inputAmount * rate).toFixed(4);
-  }, [selectedTokens.from.amount, selectedTokens.from.symbol, selectedTokens.to.symbol]);
+
+    const debounceTimer = setTimeout(fetchQuote, 500); // Debounce API calls
+    return () => clearTimeout(debounceTimer);
+  }, [selectedTokens.from.amount, selectedTokens.from.symbol, selectedTokens.to.symbol, getRealTimeQuote]);
 
   const handleAmountChange = useCallback(
     (value) => {
@@ -190,8 +236,19 @@ const SwapInterface = memo(({
           </div>
         ) : (
           <div className="amount-display">
-            <span className="estimated-amount">{estimatedOutput}</span>
-            <span className="estimated-label">Estimated</span>
+            <span className="estimated-amount">
+              {isLoadingQuote ? (
+                <span className="loading-quote">
+                  <div className="spinner-small"></div>
+                  Loading...
+                </span>
+              ) : (
+                estimatedOutput
+              )}
+            </span>
+            <span className="estimated-label">
+              {isLoadingQuote ? 'Getting quote...' : 'Estimated'}
+            </span>
           </div>
         )}
       </div>

@@ -12,6 +12,10 @@ import SwapInterface from './components/SwapInterface';
 import TransactionModal from './components/TransactionModal';
 import StatusTracker from './components/StatusTracker';
 
+// Hooks and Services
+import { useRealSwap } from './hooks/useRealSwap';
+import apiService from './services/apiService';
+
 // Network configuration
 const { networkConfig } = createNetworkConfig({
   testnet: { url: getFullnodeUrl('testnet') },
@@ -22,27 +26,67 @@ const { networkConfig } = createNetworkConfig({
 const queryClient = new QueryClient();
 
 function App() {
-  const [swapState, setSwapState] = useState({
-    currentStep: 0,
-    txHash: null,
-    orderId: null,
-    escrowId: null,
-    isSwapping: false,
-    error: null
-  });
-
+  const { 
+    isLoading,
+    error,
+    executeSwap,
+    resetSwap
+  } = useRealSwap();
+  
   const [selectedTokens, setSelectedTokens] = useState({
     from: { symbol: 'SUI', amount: '', balance: '0' },
     to: { symbol: 'ETH', amount: '', balance: '0' }
   });
 
-  const [showTxModal, setShowTxModal] = useState(false);
+  // Local swap state for UI management
+  const [swapState, setSwapState] = useState({
+    isSwapping: false,
+    currentStep: 0,
+    error: null,
+    txHash: null,
+    orderId: null,
+    escrowId: null,
+    actualOutput: null,
+    metrics: null,
+    realFusion: false
+  });
+
+  // Fusion metrics for display
   const [fusionMetrics, setFusionMetrics] = useState({
     bidsReceived: 0,
+    bestRate: null,
     partialFills: 0,
-    gasSaved: 0,
-    bestRate: null
+    gasSaved: 0
   });
+
+  const [showTxModal, setShowTxModal] = useState(false);
+  const [backendStatus, setBackendStatus] = useState({
+    connected: false,
+    contract: { deployed: false },
+    loading: true
+  });
+
+  // Check backend status on mount
+  useEffect(() => {
+    const checkBackendStatus = async () => {
+      try {
+        const status = await apiService.testConnection();
+        setBackendStatus({ ...status, loading: false });
+      } catch (error) {
+        setBackendStatus({ 
+          connected: false, 
+          contract: { deployed: false },
+          loading: false,
+          error: error.message 
+        });
+      }
+    };
+
+    checkBackendStatus();
+    // Re-check every 30 seconds
+    const interval = setInterval(checkBackendStatus, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Memoized swap steps for performance
   const swapSteps = useMemo(() => [
@@ -53,15 +97,6 @@ function App() {
     { id: 5, title: 'Complete', description: 'Swap completed successfully!' }
   ], []);
 
-  // Update swap progress
-  const updateSwapProgress = useCallback((step, data = {}) => {
-    setSwapState(prev => ({
-      ...prev,
-      currentStep: step,
-      ...data
-    }));
-  }, []);
-
   // Handle token selection with debouncing
   const handleTokenChange = useCallback((field, value) => {
     setSelectedTokens(prev => ({
@@ -70,86 +105,96 @@ function App() {
     }));
   }, []);
 
-  // Start swap process
+  // Start real swap process
   const initiateSwap = useCallback(async () => {
-    if (!selectedTokens.from.amount || parseFloat(selectedTokens.from.amount) <= 0) {
-      setSwapState(prev => ({ ...prev, error: 'Please enter a valid amount' }));
-      return;
-    }
-
     setSwapState(prev => ({ ...prev, isSwapping: true, error: null, currentStep: 1 }));
     
     try {
-      // Step 1: Create Intent Order
-      updateSwapProgress(1);
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
+      // Build swap parameters
+      const swapParams = {
+        direction: `${selectedTokens.from.symbol}->${selectedTokens.to.symbol}`,
+        fromToken: selectedTokens.from.symbol,
+        toToken: selectedTokens.to.symbol,
+        amount: parseFloat(selectedTokens.from.amount),
+        fromAddress: null, // Will be determined by wallet
+        toAddress: null, // Will be determined by wallet
+        allowPartialFills: true
+      };
+
+      const result = await executeSwap(swapParams);
       
-      const orderId = 'order_' + Math.random().toString(36).substr(2, 9);
-      updateSwapProgress(2, { orderId });
-
-      // Step 2: Bidding Phase
-      setFusionMetrics(prev => ({ ...prev, bidsReceived: 0 }));
-      for (let i = 1; i <= 3; i++) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setFusionMetrics(prev => ({ 
-          ...prev, 
-          bidsReceived: i,
-          bestRate: (1.42 - i * 0.02).toFixed(4)
+      if (result) {
+        // Update swap state with real metrics from the result
+        setSwapState(prev => ({
+          ...prev,
+          isSwapping: false,
+          currentStep: 5,
+          txHash: result.transactions?.escrowCreation || result.txHash,
+          orderId: result.orderId,
+          escrowId: result.escrowId,
+          actualOutput: result.amounts?.output,
+          metrics: result.metrics, // Real metrics from 1inch integration
+          realFusion: result.metrics?.realFusion || false
         }));
+        
+        // Update fusion metrics for display
+        if (result.metrics) {
+          setFusionMetrics(prev => ({
+            ...prev,
+            bidsReceived: result.metrics.bidsReceived || 0,
+            bestRate: result.metrics.actualRate,
+            gasSaved: result.metrics.gasSaved || 0
+          }));
+        }
       }
-
-      // Step 3: HTLC Creation
-      updateSwapProgress(3);
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      const escrowId = 'escrow_' + Math.random().toString(36).substr(2, 9);
-      const txHash = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32)))
-        .map(b => b.toString(16).padStart(2, '0')).join('');
-      
-      updateSwapProgress(4, { escrowId, txHash });
-
-      // Step 4: Partial Fills
-      setFusionMetrics(prev => ({ ...prev, partialFills: 0, gasSaved: 0 }));
-      for (let i = 1; i <= 2; i++) {
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setFusionMetrics(prev => ({ 
-          ...prev, 
-          partialFills: i,
-          gasSaved: i * 20
-        }));
-      }
-
-      // Step 5: Complete
-      updateSwapProgress(5);
-      setSwapState(prev => ({ ...prev, isSwapping: false }));
-      setShowTxModal(true);
-
     } catch (error) {
-      setSwapState(prev => ({ 
-        ...prev, 
-        isSwapping: false, 
+      setSwapState(prev => ({
+        ...prev,
+        isSwapping: false,
         error: error.message,
         currentStep: 0
       }));
+      console.error('Swap initiation failed:', error);
     }
-  }, [selectedTokens.from.amount, updateSwapProgress]);
+  }, [selectedTokens, executeSwap]);
 
-  // Reset swap state
-  const resetSwap = useCallback(() => {
+  // Handle successful swap completion
+  useEffect(() => {
+    if (swapState.currentStep === 5 && !swapState.isSwapping) {
+      setShowTxModal(true);
+    }
+  }, [swapState.currentStep, swapState.isSwapping]);
+
+  // Sync loading states with the hook
+  useEffect(() => {
+    setSwapState(prev => ({
+      ...prev,
+      isSwapping: isLoading,
+      error: error
+    }));
+  }, [isLoading, error]);
+
+  // Reset function that clears both hook and local state
+  const handleResetSwap = useCallback(() => {
+    resetSwap();
     setSwapState({
+      isSwapping: false,
       currentStep: 0,
+      error: null,
       txHash: null,
       orderId: null,
       escrowId: null,
-      isSwapping: false,
-      error: null
+      actualOutput: null,
+      metrics: null,
+      realFusion: false
     });
     setFusionMetrics({
       bidsReceived: 0,
+      bestRate: null,
       partialFills: 0,
-      gasSaved: 0,
-      bestRate: null
+      gasSaved: 0
     });
-  }, []);
+  }, [resetSwap]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -167,6 +212,20 @@ function App() {
                 <div className="logo-section">
                   <h1>Sui Fusion+</h1>
                   <span className="beta-badge">Beta</span>
+                  <div className="backend-status">
+                    {backendStatus.loading ? (
+                      <span className="status-indicator loading">🔄 Connecting...</span>
+                    ) : backendStatus.connected ? (
+                      <span className="status-indicator connected">
+                        🟢 Backend Connected
+                        {!backendStatus.contract.deployed && (
+                          <span className="contract-warning">⚠️ Contract not deployed</span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="status-indicator disconnected">🔴 Backend Disconnected</span>
+                    )}
+                  </div>
                 </div>
                 <WalletConnection />
               </div>
@@ -255,11 +314,18 @@ function App() {
               orderId={swapState.orderId}
               escrowId={swapState.escrowId}
               fromToken={selectedTokens.from}
-              toToken={selectedTokens.to}
-              metrics={fusionMetrics}
+              toToken={{
+                ...selectedTokens.to,
+                receivedAmount: swapState.actualOutput || selectedTokens.to.amount
+              }}
+              metrics={{
+                ...fusionMetrics,
+                ...swapState.metrics, // Include real metrics from swap result
+                realFusion: swapState.realFusion || false
+              }}
               onNewSwap={() => {
                 setShowTxModal(false);
-                resetSwap();
+                handleResetSwap();
               }}
             />
 

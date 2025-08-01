@@ -109,7 +109,7 @@ const TransactionModal = memo(({
             
             <div className="token-info to">
               <div className="token-amount">
-                {(parseFloat(fromToken.amount) * 1.42).toFixed(4)}
+                {toToken.receivedAmount || 'Calculating...'}
               </div>
               <div className="token-symbol">{toToken.symbol}</div>
               <div className="token-name">{toToken.name}</div>
@@ -128,7 +128,9 @@ const TransactionModal = memo(({
               </div>
               <div className="result-content">
                 <div className="result-label">Best Rate Achieved</div>
-                <div className="result-value">{metrics.bestRate || '1.42'} SUI/ETH</div>
+                <div className="result-value">
+                  {metrics.actualRate || 'Market Rate'} {fromToken.symbol}/{toToken.symbol}
+                </div>
               </div>
             </div>
             
@@ -138,7 +140,9 @@ const TransactionModal = memo(({
               </div>
               <div className="result-content">
                 <div className="result-label">Gas Optimization</div>
-                <div className="result-value">{metrics.gasSaved || 40}% Saved</div>
+                <div className="result-value">
+                  {metrics.gasSaved ? `${metrics.gasSaved}% Saved` : 'Optimized'}
+                </div>
               </div>
             </div>
             
@@ -148,7 +152,9 @@ const TransactionModal = memo(({
               </div>
               <div className="result-content">
                 <div className="result-label">Execution Time</div>
-                <div className="result-value">~2 minutes</div>
+                <div className="result-value">
+                  {metrics.executionTime || 'Real-time'}
+                </div>
               </div>
             </div>
             
@@ -158,7 +164,9 @@ const TransactionModal = memo(({
               </div>
               <div className="result-content">
                 <div className="result-label">Security</div>
-                <div className="result-value">Bridge-less</div>
+                <div className="result-value">
+                  {metrics.realFusion ? 'Real 1inch' : 'Bridge-less'}
+                </div>
               </div>
             </div>
           </div>
@@ -245,7 +253,9 @@ const TransactionModal = memo(({
             
             <div className="detail-row">
               <span className="detail-label">Total Bids:</span>
-              <span className="detail-value">{metrics.bidsReceived || 3}</span>
+              <span className="detail-value">
+                {metrics.bidsReceived || (metrics.realFusion ? 'Live Bidding' : 'Demo')}
+              </span>
             </div>
           </div>
         </div>
