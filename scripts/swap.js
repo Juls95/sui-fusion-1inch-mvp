@@ -1,6 +1,6 @@
 const { SuiClient, getFullnodeUrl } = require('@mysten/sui/client');
 const { Ed25519Keypair } = require('@mysten/sui/keypairs/ed25519');
-const { TransactionBlock } = require('@mysten/sui/transactions');
+const { Transaction } = require('@mysten/sui/transactions');
 const { fromB64, toB64 } = require('@mysten/sui/utils');
 const crypto = require('crypto');
 const fs = require('fs');
@@ -167,7 +167,7 @@ class SuiFusionHTLC {
     async createEscrow(keypair, redeemer, secretHash, amount, timelock, auctionParams, allowPartialFills = true) {
         console.log('🔒 Creating Fusion+ HTLC Escrow...');
         
-        const tx = new TransactionBlock();
+        const tx = new Transaction();
         const [coin] = tx.splitCoins(tx.gas, [tx.pure(amount)]);
         
         // Call the enhanced deposit function with auction params
@@ -193,9 +193,9 @@ class SuiFusionHTLC {
             typeArguments: ['0x2::sui::SUI']
         });
 
-        const result = await this.client.signAndExecuteTransactionBlock({
+        const result = await this.client.signAndExecuteTransaction({
             signer: keypair,
-            transactionBlock: tx,
+            transaction: tx,
             options: {
                 showEffects: true,
                 showObjectChanges: true
@@ -223,7 +223,7 @@ class SuiFusionHTLC {
     async withdrawWithPartialFill(keypair, escrowId, secret, amount) {
         console.log('💰 Executing Partial Withdrawal...');
         
-        const tx = new TransactionBlock();
+        const tx = new Transaction();
         
         tx.moveCall({
             target: `${this.packageId}::escrow::withdraw`,
@@ -235,9 +235,9 @@ class SuiFusionHTLC {
             typeArguments: ['0x2::sui::SUI']
         });
 
-        const result = await this.client.signAndExecuteTransactionBlock({
+        const result = await this.client.signAndExecuteTransaction({
             signer: keypair,
-            transactionBlock: tx,
+            transaction: tx,
             options: {
                 showEffects: true,
                 showEvents: true
@@ -294,8 +294,8 @@ class SuiFusionHTLC {
     async getRemainingAmount(escrowId) {
         // Call the get_remaining_amount function
         try {
-            const tx = new TransactionBlock();
-            tx.moveCall({
+                    const tx = new Transaction();
+        tx.moveCall({
                 target: `${this.packageId}::escrow::get_remaining_amount`,
                 arguments: [tx.object(escrowId)],
                 typeArguments: ['0x2::sui::SUI']

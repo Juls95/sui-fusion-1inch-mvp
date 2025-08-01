@@ -4,7 +4,14 @@
   "description": "",
   "main": "swap.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "setup": "node setup.js",
+    "deploy": "node deploy_htlc.js",
+    "swap": "node real_swap.js",
+    "mock": "node swap_mock_data.js",
+    "api": "node api-server.js",
+    "dev": "DEBUG=sui-fusion:* node api-server.js",
+    "start-testing": "./start-testing.sh"
   },
   "keywords": [],
   "author": "",
@@ -13,6 +20,9 @@
     "dotenv": "^17.2.1",
     "ethers": "^6.15.0",
     "@mysten/sui": "^1.15.0",
-    "axios": "^1.7.7"
+    "axios": "^1.7.7",
+    "debug": "^4.3.4",
+    "express": "^4.19.2",
+    "cors": "^2.8.5"
   }
 }
