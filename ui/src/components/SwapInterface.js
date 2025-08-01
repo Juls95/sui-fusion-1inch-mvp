@@ -144,8 +144,16 @@ const SwapInterface = memo(({
 
   const handleAmountChange = useCallback(
     (value) => {
-      // Debounce input changes
-      const numericValue = value.replace(/[^0-9.]/g, '');
+      // Allow numeric input with decimal point, prevent multiple decimals
+      let numericValue = value.replace(/[^0-9.]/g, '');
+      
+      // Prevent multiple decimal points
+      const decimalCount = (numericValue.match(/\./g) || []).length;
+      if (decimalCount > 1) {
+        numericValue = numericValue.substring(0, numericValue.lastIndexOf('.'));
+      }
+      
+      // Update token amount
       onTokenChange('from', { amount: numericValue });
     },
     [onTokenChange]

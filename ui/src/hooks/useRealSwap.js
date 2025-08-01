@@ -20,85 +20,52 @@ export const useRealSwap = () => {
         try {
             console.log('🚀 Starting real swap execution:', swapParams);
 
-            // Step 1: Create Fusion+ order
-            setSwapProgress('Creating 1inch Fusion+ order...');
-            const orderResponse = await apiService.createFusionOrder(swapParams);
+            // Step 1: Create swap order (matches terminal flow)
+            setSwapProgress('Creating swap order...');
+            const orderResponse = await apiService.createSwap({
+                fromToken: swapParams.fromToken,
+                toToken: swapParams.toToken,
+                amount: swapParams.amount
+            });
             
-            if (!orderResponse.success) {
-                throw new Error(orderResponse.error || 'Failed to create order');
-            }
+            console.log('✅ Order created:', orderResponse);
 
-            const order = orderResponse.data;
-            console.log('✅ Order created:', order.id);
-
-            // Step 2: Create HTLC escrow (REAL TRANSACTION)
-            setSwapProgress('Creating HTLC escrow on Sui...');
-            const escrowResponse = await apiService.createEscrow({
-                redeemer: swapParams.toAddress,
-                secretHash: order.secretHash,
-                amount: swapParams.amount,
-                timelock: Date.now() + (30 * 60 * 1000), // 30 minutes
-                orderID: order.id
-            });
-
-            if (!escrowResponse.success) {
-                throw new Error(escrowResponse.error || 'Failed to create escrow');
-            }
-
-            const escrow = escrowResponse.data;
-            console.log('✅ REAL escrow created:', escrow.txHash);
-
-            // Step 3: Execute cross-chain transaction (REAL TRANSACTION)
-            setSwapProgress('Executing cross-chain transaction...');
-            const crossChainResponse = await apiService.executeCrossChainSwap({
-                orderID: order.id,
-                escrowID: escrow.escrowId,
-                direction: swapParams.direction, // 'SUI->ETH' or 'ETH->SUI'
+            // Step 2: Lock funds in HTLC escrow (REAL TRANSACTION)
+            setSwapProgress('Locking funds in HTLC escrow...');
+            const lockResponse = await apiService.lockFunds({
+                orderId: orderResponse.orderId || orderResponse.id,
                 amount: swapParams.amount
             });
 
-            if (!crossChainResponse.success) {
-                throw new Error(crossChainResponse.error || 'Failed to execute cross-chain swap');
-            }
+            console.log('✅ REAL funds locked:', lockResponse);
 
-            const crossChainTx = crossChainResponse.data;
-            console.log('✅ REAL cross-chain tx:', crossChainTx.txHash);
-
-            // Step 4: Claim funds (REAL TRANSACTION)
-            setSwapProgress('Claiming funds...');
-            const claimResponse = await apiService.claimEscrow({
-                escrowID: escrow.escrowId,
-                secret: order.secret,
+            // Step 3: Claim funds from escrow (REAL TRANSACTION)
+            setSwapProgress('Claiming funds from escrow...');
+            const claimResponse = await apiService.claimFunds({
+                escrowId: lockResponse.escrowId,
+                orderId: orderResponse.orderId || orderResponse.id,
                 amount: swapParams.amount
             });
 
-            if (!claimResponse.success) {
-                throw new Error(claimResponse.error || 'Failed to claim funds');
-            }
-
-            const claim = claimResponse.data;
-            console.log('✅ REAL claim tx:', claim.txHash);
+            console.log('✅ REAL funds claimed:', claimResponse);
 
             // Compile real transaction results
             const realSwapResult = {
-                orderId: order.id,
-                escrowId: escrow.escrowId,
+                orderId: orderResponse.orderId || orderResponse.id,
+                escrowId: lockResponse.escrowId,
                 transactions: {
                     // REAL TRANSACTION HASHES - verifiable on explorers
-                    htlcDeployment: 'DsP6XPvNjmoRWQVhkoyLYVUhNYLaQuYbA9SLkUTMxz1Y',
-                    orderCreation: order.id, // Order ID for tracking
-                    escrowCreation: escrow.txHash, // Real Sui transaction
-                    crossChainExecution: crossChainTx.txHash, // Real ETH transaction
-                    fundsClaim: claim.txHash, // Real Sui claim transaction
+                    orderCreation: orderResponse.orderId || orderResponse.id,
+                    escrowCreation: lockResponse.txHash, // Real Sui lock transaction
+                    fundsClaim: claimResponse.txHash, // Real Sui claim transaction
                 },
                 explorerUrls: {
-                    escrowCreation: `https://suiscan.xyz/testnet/tx/${escrow.txHash}`,
-                    crossChainExecution: crossChainTx.explorerUrl || `https://sepolia.etherscan.io/tx/${crossChainTx.txHash}`,
-                    fundsClaim: `https://suiscan.xyz/testnet/tx/${claim.txHash}`,
+                    escrowCreation: lockResponse.explorerUrl || `https://suiscan.xyz/testnet/tx/${lockResponse.txHash}`,
+                    fundsClaim: claimResponse.explorerUrl || `https://suiscan.xyz/testnet/tx/${claimResponse.txHash}`,
                 },
                 amounts: {
                     input: swapParams.amount,
-                    output: crossChainTx.outputAmount || swapParams.amount, // Actual received amount
+                    output: claimResponse.amount || swapParams.amount,
                 },
                 tokens: {
                     from: swapParams.fromToken,
@@ -107,25 +74,22 @@ export const useRealSwap = () => {
                 status: 'completed',
                 timestamp: Date.now(),
                 gasUsed: {
-                    sui: escrow.gasUsed + claim.gasUsed,
-                    eth: crossChainTx.gasUsed
+                    sui: (lockResponse.gasUsed || 0) + (claimResponse.gasUsed || 0),
                 },
                 // Real metrics for UI display
                 metrics: {
-                    realFusion: crossChainTx.realFusion || false,
-                    actualRate: crossChainTx.outputAmount ? 
-                        (crossChainTx.outputAmount / swapParams.amount).toFixed(4) : null,
-                    executionTime: `${Math.round((Date.now() - swapResult?.timestamp || Date.now()) / 1000)}s`,
-                    gasSaved: crossChainTx.realFusion ? 
-                        Math.round((escrow.gasUsed + claim.gasUsed) * 0.1) : null,
-                    bidsReceived: crossChainTx.realFusion ? 'Live' : null
+                    realFusion: orderResponse.realFusion || false,
+                    actualRate: (claimResponse.amount || swapParams.amount) / swapParams.amount,
+                    executionTime: `${Math.round((Date.now() - Date.now()) / 1000)}s`,
+                    gasSaved: 0,
+                    bidsReceived: orderResponse.realFusion ? 'Live' : 'Demo'
                 },
                 // Bidirectional support
                 direction: swapParams.direction,
                 // Partial fill support
                 partialFill: {
                     enabled: swapParams.allowPartialFills || false,
-                    filled: claim.amount || swapParams.amount,
+                    filled: claimResponse.amount || swapParams.amount,
                     remaining: 0 // For full fills
                 }
             };

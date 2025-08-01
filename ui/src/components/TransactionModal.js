@@ -11,6 +11,7 @@ import {
   Share
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import FusionVerification from './FusionVerification';
 
 const TransactionModal = memo(({ 
   isOpen, 
@@ -259,6 +260,12 @@ const TransactionModal = memo(({
             </div>
           </div>
         </div>
+
+        {/* Fusion+ Verification */}
+        <FusionVerification 
+          orderHash={orderId || metrics?.fusionOrderHash} 
+          isVisible={true}
+        />
 
         {/* Action Buttons */}
         <div className="modal-actions">

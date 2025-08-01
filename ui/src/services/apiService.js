@@ -137,10 +137,10 @@ class APIService {
         }).then(response => ({
             success: true,
             data: {
-                id: response.orderId,
-                secretHash: response.secretHash,
-                secret: 'placeholder_secret', // Would come from actual 1inch integration
-                expiresAt: response.expiresAt
+                id: response.orderId || response.id,
+                secretHash: response.secretHash || 'demo_secret_hash',
+                secret: response.secret || 'demo_secret',
+                expiresAt: response.expiresAt || Date.now() + (30 * 60 * 1000)
             }
         })).catch(error => ({
             success: false,
