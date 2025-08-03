@@ -42,14 +42,26 @@ const TransactionModal = memo(({
 
   const handleViewOnExplorer = () => {
     if (txHash) {
-      window.open(`https://suiscan.xyz/testnet/tx/${txHash}`, '_blank');
+      // Determine the correct explorer based on the transaction hash format and network
+      let explorerUrl;
+      
+      // Check if this is a Base Sepolia transaction (proper ETH format)
+      if (txHash.startsWith('0x') && txHash.length === 66) {
+        // This looks like a Base Sepolia transaction
+        explorerUrl = `https://sepolia.basescan.org/tx/${txHash}`;
+      } else {
+        // Default to Sui explorer for non-ETH transactions
+        explorerUrl = `https://suiscan.xyz/testnet/tx/${txHash}`;
+      }
+      
+      window.open(explorerUrl, '_blank');
     }
   };
 
   const handleShare = async () => {
     const shareData = {
-      title: 'Sui Fusion+ Swap Completed!',
-      text: `Just completed a cross-chain swap: ${fromToken.amount} ${fromToken.symbol} → ${toToken.symbol} using Sui Fusion+`,
+      title: 'SuniFi Swap Completed!',
+      text: `Just completed a cross-chain swap: ${fromToken.amount} ${fromToken.symbol} → ${toToken.symbol} using SuniFi`,
       url: window.location.href
     };
 
@@ -118,9 +130,9 @@ const TransactionModal = memo(({
           </div>
         </div>
 
-        {/* Fusion+ Metrics */}
-        <div className="fusion-results">
-          <h3>Fusion+ Optimization Results</h3>
+        {/* SuniFi Metrics */}
+        <div className="fusion-metrics">
+          <h3>SuniFi Optimization Results</h3>
           
           <div className="results-grid">
             <div className="result-item">
@@ -244,12 +256,16 @@ const TransactionModal = memo(({
             
             <div className="detail-row">
               <span className="detail-label">Network:</span>
-              <span className="detail-value">Sui Testnet</span>
+              <span className="detail-value">
+                {txHash && txHash.startsWith('0x') && txHash.length === 66 
+                  ? 'Base Sepolia Testnet' 
+                  : 'Sui Testnet'}
+              </span>
             </div>
             
             <div className="detail-row">
               <span className="detail-label">Protocol:</span>
-              <span className="detail-value">Fusion+ HTLC</span>
+              <span className="detail-value">SuniFi HTLC</span>
             </div>
             
             <div className="detail-row">

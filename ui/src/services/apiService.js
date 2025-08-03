@@ -172,7 +172,7 @@ class APIService {
             body: JSON.stringify({
                 orderID,
                 escrowID,
-                direction,
+                direction: direction + '_BASE_SEPOLIA', // Force Base Sepolia execution
                 amount: amount.toString()
             })
         }).then(response => ({
@@ -180,9 +180,12 @@ class APIService {
             data: {
                 txHash: response.txHash,
                 outputAmount: response.outputAmount || amount * 0.99,
-                gasUsed: response.gasUsed || 50000,
+                gasUsed: response.gasUsed || '21000',
                 explorerUrl: response.explorerUrl,
-                realFusion: response.realFusion || false
+                network: response.network || 'BASE_SEPOLIA',
+                blockNumber: response.blockNumber,
+                realTransaction: response.realTransaction || false,
+                confirmations: response.confirmations || 1
             }
         })).catch(error => ({
             success: false,
@@ -190,17 +193,37 @@ class APIService {
         }));
     }
 
+    // Test Base Sepolia transaction - for debugging UI issues
+    async testBaseSepolia() {
+        return this.request('/test/base-sepolia', {
+            method: 'POST'
+        }).then(response => ({
+            success: true,
+            data: response
+        })).catch(error => ({
+            success: false,
+            error: error.message
+        }));
+    }
+
+    // Enhanced claimEscrow to include Base Sepolia transaction details
     async claimEscrow({ escrowID, secret, amount }) {
-        return this.claimFunds({
-            escrowId: escrowID,
-            orderId: 'placeholder', // The API expects orderId
-            amount: amount
+        return this.request('/swap/claim', {
+            method: 'POST',
+            body: JSON.stringify({
+                escrowID,
+                secret,
+                amount: amount.toString()
+            })
         }).then(response => ({
             success: true,
             data: {
                 txHash: response.txHash,
+                status: response.status,
                 amount: amount,
-                gasUsed: 80000 // Placeholder
+                gasUsed: response.gasUsed || 0,
+                explorerUrl: response.explorerUrl || `https://suiscan.xyz/testnet/tx/${response.txHash}`,
+                network: 'SUI' // Claim happens on Sui
             }
         })).catch(error => ({
             success: false,

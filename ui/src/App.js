@@ -210,7 +210,12 @@ function App() {
             <header className="app-header">
               <div className="header-content">
                 <div className="logo-section">
-                  <h1>Sui Fusion+</h1>
+                  <img 
+                    src="/SuniFi.jpg" 
+                    alt="SuniFi Logo" 
+                    className="app-logo"
+                  />
+                  <h1>SuniFi</h1>
                   <span className="beta-badge">Beta</span>
                   <div className="backend-status">
                     {backendStatus.loading ? (
@@ -237,7 +242,7 @@ function App() {
                 <div className="swap-card">
                   <div className="card-header">
                     <h2>Cross-Chain Intent Swap</h2>
-                    <p>Bridge-less atomic swaps with Fusion+ optimization</p>
+                    <p>Bridge-less atomic swaps powered by SuniFi technology</p>
                   </div>
 
                   {/* Swap Interface */}
@@ -262,10 +267,10 @@ function App() {
                     />
                   )}
 
-                  {/* Fusion+ Features Display */}
+                  {/* SuniFi Features Display */}
                   {swapState.currentStep >= 2 && (
-                    <div className="fusion-metrics">
-                      <h3>Fusion+ Optimization</h3>
+                    <div className="fusion-features">
+                      <h3>SuniFi Optimization</h3>
                       <div className="metrics-grid">
                         <div className="metric-item">
                           <span className="metric-label">Bids Received</span>

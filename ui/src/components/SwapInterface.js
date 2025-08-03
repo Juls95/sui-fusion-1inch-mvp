@@ -287,7 +287,7 @@ const SwapInterface = memo(({
         <div className="connect-prompt">
           <div className="prompt-icon">🔗</div>
           <h3>Connect Your Wallet</h3>
-          <p>Connect your wallet to start trading with Fusion+</p>
+          <p>Connect your wallet to start trading with SuniFi</p>
         </div>
       </div>
     );
@@ -375,7 +375,7 @@ const SwapInterface = memo(({
         />
       </div>
 
-      {/* Fusion+ Features */}
+      {/* SuniFi Features */}
       <div className="fusion-features">
         <div className="feature-item">
           <Zap className="feature-icon" size={16} />
@@ -422,7 +422,7 @@ const SwapInterface = memo(({
               Processing Swap...
             </>
           ) : (
-            'Start Fusion+ Swap'
+            'Start SuniFi Swap'
           )}
         </button>
       </div>
