@@ -1,231 +1,428 @@
-# 🚀 Sui Fusion+ Extension MVP
+# Sui Fusion+ 1inch MVP - Real Cross-Chain Swaps
 
-A cross-chain atomic swap dApp that extends 1inch Fusion+ to Sui, enabling secure, bridge-less swaps between Ethereum and Sui networks.
+🚀 **LIVE TESTNET**: Real cross-chain swaps between Sui and Base Sepolia with verifiable transaction hashes
 
-## 🌟 Features
+## 🎯 **Project Overview**
 
-- **Cross-Chain Atomic Swaps**: Swap ETH for SUI without bridges
-- **HTLC Escrow**: Secure hash time-locked contracts on Sui
-- **1inch Fusion+ Integration**: Intent-based swap mechanics
-- **Partial Fills**: Sui-optimized partial order execution
-- **Real-time Status Tracking**: Visual progress indicators
-- **Transaction History**: Complete swap audit trail
-- **Modern UI**: Beautiful, responsive interface
+This project implements a **real cross-chain swap protocol** that extends 1inch Fusion+ functionality to the Sui blockchain using Hash Time Locked Contracts (HTLC). The system enables trustless atomic swaps between SUI and ETH on Base Sepolia testnet with **actual onchain transactions**.
 
-## 🏗️ Architecture
+### **Latest Updates (2024)**
+- ✅ **Base Sepolia Integration**: Real ETH transactions on Base Sepolia testnet
+- ✅ **Transaction Hash Fix**: UI now returns real, confirmed transaction hashes
+- ✅ **Enhanced API**: Improved error handling and transaction verification
+- ✅ **Real 1inch Integration**: Official Fusion+ SDK implementation
+- ✅ **UI Improvements**: Better explorer links and transaction tracking
 
-```
-sui-fusion-1inch-mvp/
-├── contracts/           # Sui Move smart contracts
-│   └── htlc-escrow/    # HTLC escrow implementation
-├── scripts/            # Integration & testing scripts
-│   └── swap.js         # Cross-chain swap simulation
-├── ui/                 # React frontend application
-│   └── src/            # React components & styling
-└── docs/              # Documentation & examples
-```
+## 🔗 **Real Transaction Evidence**
 
-## 🚀 Quick Start
+### **Live Infrastructure**
+- **HTLC Contract Package**: `0x4f5ce6e089f48137b532bfdda171d18c09a2cd278d2212b7c3f71ae7c88525d`
+- **Network**: Sui Testnet + Base Sepolia Testnet
+- **Latest Base Sepolia TX**: [`0xd2482181aca2dc0f123b7949afd48667d219d3ecc411c9ddef0fbb277099173e`](https://sepolia.basescan.org/tx/0xd2482181aca2dc0f123b7949afd48667d219d3ecc411c9ddef0fbb277099173e)
 
-### Prerequisites
+*All transactions are real and verifiable on testnet explorers*
 
-- Node.js (v18+)
-- Sui CLI (`brew install sui`)
-- Git
+## 🏗️ **Architecture & Key Components**
 
-### Installation
+### **1. Smart Contract Layer (`docs/htlc_escrow/sources/htlc_escrow.move`)**
+- **HTLC Implementation**: Move-based Hash Time Locked Contract
+- **Auction Parameters**: Enhanced for Fusion+ compatibility
+- **Partial Fills**: Support for incremental claims
+- **Security Features**: Timelock protection and hashlock validation
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd sui-fusion-1inch-mvp
-   ```
+### **2. Backend Integration (`scripts/real_swap.js`)**
+The core swap execution engine with three main client classes:
 
-2. **Install dependencies**
-   ```bash
-   # Install UI dependencies
-   cd ui && npm install
-   
-   # Install script dependencies
-   cd ../scripts && npm install
-   ```
-
-3. **Deploy HTLC contract**
-   ```bash
-   cd ../docs/htlc_escrow
-   sui move build
-   sui client publish --gas-budget 100000000
-   ```
-
-4. **Start the UI**
-   ```bash
-   cd ../../ui
-   npm start
-   ```
-
-5. **Test integration**
-   ```bash
-   cd ../scripts
-   node swap.js
-   ```
-
-## 📋 Usage
-
-### 1. Connect Wallet
-- Open the UI in your browser
-- Connect your Sui wallet (Sui Wallet, Suiet, etc.)
-- Ensure you have testnet SUI tokens
-
-### 2. Create Swap Intent
-- Select source token (ETH) and destination token (SUI)
-- Enter the amount you want to swap
-- Click "Swap" to initiate the process
-
-### 3. Monitor Progress
-- Watch real-time status updates:
-  - ✅ Create Intent
-  - 🔒 Lock Funds (HTLC)
-  - 🔄 Execute Swap
-  - 💰 Claim Funds
-
-### 4. View Transactions
-- All transactions are logged with hashes
-- Click on transaction hashes to view on Sui Explorer
-- Complete audit trail for transparency
-
-## 🔧 Technical Details
-
-### HTLC Contract Features
-
-```move
-// Enhanced Escrow with Fusion+ features
-public struct Escrow<phantom T> has key, store {
-    id: object::UID,
-    initiator: address,
-    redeemer: address,
-    secret_hash: vector<u8>,
-    amount: u64,
-    balance: Balance<T>,
-    timelock: u64,
-    auction_params: AuctionParams,
-    partial_fills_allowed: bool,
-    total_filled: u64,
+#### **SuiHTLCClient Class**
+```javascript
+// Handles Sui blockchain operations
+class SuiHTLCClient {
+  // Creates real escrow with HTLC on Sui testnet
+  async createEscrow(redeemer, secretHash, amount, timelock)
+  
+  // Claims funds with secret reveal
+  async claimEscrow(escrowId, secret, amount)
+  
+  // Refunds after timelock expiration
+  async refundEscrow(escrowId)
 }
 ```
 
-### Key Functions
-
-- `deposit()`: Lock funds in HTLC escrow
-- `withdraw()`: Claim funds with secret (supports partial fills)
-- `refund()`: Recover funds after timelock
-- `get_remaining_amount()`: Check unfilled amount
-- `is_fully_filled()`: Check if order is complete
-
-### Integration Script
-
-The `scripts/swap.js` simulates the complete cross-chain flow:
-
-1. **Intent Creation**: Mock 1inch Fusion+ API
-2. **Resolver Bidding**: Simulate competitive bidding
-3. **HTLC Deployment**: Deploy escrow contract
-4. **Fund Locking**: Lock SUI in escrow
-5. **ETH Swap**: Execute on Ethereum
-6. **Secret Reveal**: Claim SUI with secret
-7. **Completion**: Atomic swap success
-
-## 🎯 Use Case: Alice's Cross-Chain Swap
-
-**Scenario**: Alice wants to swap 1.5 ETH for SUI
-
-1. **Intent Creation**: Alice creates an intent order on 1inch Fusion+
-2. **Resolver Competition**: Multiple resolvers bid for the order
-3. **HTLC Setup**: Selected resolver deploys HTLC on Sui
-4. **Fund Locking**: Alice's SUI is locked in escrow with timelock
-5. **ETH Execution**: Resolver executes ETH swap on Ethereum
-6. **Secret Reveal**: Resolver reveals secret to claim SUI
-7. **Completion**: Alice receives SUI, resolver receives ETH
-
-**Benefits**:
-- ✅ No bridges required
-- ✅ Atomic execution
-- ✅ Competitive pricing
-- ✅ Secure escrow
-- ✅ Partial fills supported
-
-## 🛠️ Development
-
-### Contract Development
-
-```bash
-cd docs/htlc_escrow
-sui move build
-sui move test
+#### **OneinchFusionClient Class**
+```javascript
+// Handles 1inch Fusion+ API integration
+class OneinchFusionClient {
+  // Creates real Fusion+ orders using official SDK
+  async createFusionOrder(fromToken, toToken, amount, userAddress)
+  
+  // Special Base Sepolia testnet support
+  async createBaseSpoliaTestOrder(fromToken, toToken, amount, userAddress)
+  
+  // Monitors order execution
+  async executeCrossChainSwap(orderData)
+}
 ```
 
-### UI Development
+#### **EthereumClient Class**
+```javascript
+// Handles Base Sepolia transactions
+class EthereumClient {
+  // Executes real ETH transactions with confirmation
+  async executeSwap(fromToken, toToken, amount)
+  
+  // Verifies transaction on Base Sepolia
+  async verifyTransaction(txHash)
+}
+```
 
+### **3. API Server (`scripts/api-server.js`)**
+Express.js backend that connects UI to blockchain operations:
+
+#### **Key Endpoints**
+- `POST /api/swap/create` - Creates Fusion+ orders
+- `POST /api/swap/lock` - Locks funds in HTLC escrow
+- `POST /api/swap/claim` - Claims funds from escrow
+- `POST /api/swap/execute` - **NEW**: Executes real Base Sepolia transactions
+- `POST /api/test/base-sepolia` - **NEW**: Test endpoint for Base Sepolia verification
+
+#### **Base Sepolia Integration**
+```javascript
+// NEW: Real Base Sepolia transaction execution
+app.post('/api/swap/execute', async (req, res) => {
+  // Execute real Base Sepolia transaction using ethClient
+  const ethTxResult = await ethClient.executeSwap('ETH', 'SUI', amount);
+  
+  // Return REAL transaction hash to UI
+  res.json({
+    txHash: ethTxResult.txHash, // Real Base Sepolia hash
+    explorerUrl: ethTxResult.explorerUrl,
+    network: 'BASE_SEPOLIA',
+    realTransaction: true
+  });
+});
+```
+
+### **4. React UI (`ui/src/`)**
+
+#### **Main Components**
+- **SwapInterface**: Token selection and swap initiation
+- **TransactionModal**: Displays real transaction details with explorer links
+- **WalletConnection**: Wallet integration simulation
+- **StatusTracker**: Real-time swap progress monitoring
+
+#### **Real Swap Hook (`ui/src/hooks/useRealSwap.js`)**
+```javascript
+// Manages real cross-chain swap execution
+export const useRealSwap = () => {
+  const executeSwap = async (swapParams) => {
+    // Step 1: Create Fusion+ order
+    const orderResponse = await apiService.createSwap(swapParams);
+    
+    // Step 2: Lock funds in HTLC (Real Sui transaction)
+    const lockResponse = await apiService.lockFunds({
+      orderId: orderResponse.orderId,
+      amount: swapParams.amount
+    });
+    
+    // Step 3: Execute cross-chain (Real Base Sepolia transaction)
+    const claimResponse = await apiService.claimFunds({
+      escrowId: lockResponse.escrowId,
+      orderId: orderResponse.orderId
+    });
+    
+    // Return real transaction hashes
+    return {
+      transactions: {
+        escrowCreation: lockResponse.txHash, // Real Sui hash
+        fundsClaim: claimResponse.txHash     // Real Base Sepolia hash
+      },
+      explorerUrls: {
+        sui: `https://suiscan.xyz/testnet/tx/${lockResponse.txHash}`,
+        baseSepolia: `https://sepolia.basescan.org/tx/${claimResponse.txHash}`
+      }
+    };
+  };
+};
+```
+
+## 🚀 **Installation & Setup**
+
+### **Prerequisites**
+- **Node.js** 18 or higher
+- **Git** for cloning the repository
+- **Sui CLI** (optional, for key generation)
+
+### **Step 1: Clone Repository**
+```bash
+git clone https://github.com/your-repo/sui-fusion-1inch-mvp.git
+cd sui-fusion-1inch-mvp
+```
+
+### **Step 2: Install Dependencies**
+```bash
+# Install backend dependencies
+cd scripts
+npm install
+
+# Install UI dependencies
+cd ../ui
+npm install
+```
+
+### **Step 3: Environment Configuration**
+
+Create `.env` file in the project root:
+```bash
+# Copy the example file
+cp .env.example .env
+```
+
+Edit `.env` with your configuration:
+```bash
+# === SUI CONFIGURATION ===
+SUI_RPC_URL=https://fullnode.testnet.sui.io
+SUI_PRIVATE_KEY=suiprivkey1your_sui_private_key_here
+
+# === BASE SEPOLIA CONFIGURATION ===
+NETWORK_NAME=BASE_SEPOLIA
+ETH_RPC_URL=https://sepolia.base.org
+ETH_PRIVATE_KEY=0x1234567890abcdef1234567890abcdef12345678
+CHAIN_ID=84532
+
+# === 1INCH FUSION+ API (Optional) ===
+ONEINCH_API_KEY=your_1inch_api_key_from_portal_1inch_dev
+
+# === GAS SETTINGS ===
+GAS_BUDGET=20000000
+
+# === API SERVER ===
+API_PORT=3001
+```
+
+### **Step 4: Get Testnet Tokens**
+
+#### **Sui Testnet Tokens**
+```bash
+# Join Sui Discord: https://discord.gg/sui
+# Use command: !faucet YOUR_SUI_ADDRESS
+```
+
+#### **Base Sepolia ETH**
+- Visit: https://www.alchemy.com/faucets/base-sepolia
+- Connect your wallet and request testnet ETH
+
+### **Step 5: Generate Private Keys (if needed)**
+
+#### **Sui Private Key**
+```bash
+# Install Sui CLI
+sui client new-address ed25519
+
+# Copy the private key from output (starts with 'suiprivkey...')
+```
+
+#### **Ethereum Private Key**
+- Use MetaMask or any Ethereum wallet
+- Export private key (starts with '0x...')
+- **WARNING**: Only use testnet keys, never mainnet!
+
+## 🔧 **Running the Application**
+
+### **Option 1: Full Stack (Recommended)**
+
+#### **Terminal 1: Start API Server**
+```bash
+cd scripts
+node api-server.js
+```
+*Should show: "🚀 API Server running on http://localhost:3001"*
+
+#### **Terminal 2: Start UI**
 ```bash
 cd ui
 npm start
 ```
+*Should open browser at: http://localhost:3000*
 
-### Integration Testing
+### **Option 2: Backend Testing Only**
 
+#### **Test Base Sepolia Integration**
 ```bash
 cd scripts
-node swap.js
+node verify_base_sepolia_tx.js
 ```
 
-## 📊 Performance Metrics
+#### **Test Complete Swap Flow**
+```bash
+cd scripts
+node test_base_sepolia_swap.js
+```
 
-- **Swap Time**: ~2 minutes end-to-end
-- **Gas Usage**: ~0.1 SUI per swap
-- **Success Rate**: 99.9% (with proper error handling)
-- **Partial Fill Support**: Up to 50% better rates
-- **Cross-Chain**: ETH ↔ SUI atomic swaps
+#### **Test UI API Integration**
+```bash
+cd scripts
+node test_ui_base_sepolia.js
+```
 
-## 🔒 Security Features
+## 🧪 **Usage Examples**
 
-- **Hash Time-Locked Contracts**: Cryptographic security
-- **Timelock Protection**: Automatic refund after timeout
-- **Partial Fill Safety**: Secure split execution
-- **Event Logging**: Complete audit trail
-- **Input Validation**: Comprehensive checks
+### **1. Command Line Swap**
+```bash
+cd scripts
 
-## 🌐 Networks Supported
+# Test bidirectional swap
+node bidirectional_demo.js
 
-- **Sui**: Testnet & Mainnet
-- **Ethereum**: Sepolia & Mainnet
-- **Tokens**: ETH, SUI, USDC, USDT
+# Execute single swap
+NETWORK_NAME=BASE_SEPOLIA node real_swap.js
+```
 
-## 📝 License
+### **2. UI Swap**
+1. Open http://localhost:3000
+2. Select tokens (SUI → ETH)
+3. Enter amount (e.g., 0.01 SUI)
+4. Click "Initiate Swap"
+5. **View real transaction hash** in modal
+6. Click explorer link to verify on Base Sepolia
 
-MIT License - see LICENSE file for details
+### **3. API Testing**
+```bash
+# Test Base Sepolia transaction endpoint
+curl -X POST http://localhost:3001/api/test/base-sepolia
 
-## 🤝 Contributing
+# Expected response:
+{
+  "success": true,
+  "txHash": "0x...",
+  "network": "BASE_SEPOLIA",
+  "explorerUrl": "https://sepolia.basescan.org/tx/0x..."
+}
+```
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+## 🔍 **Verification & Debugging**
 
-## 🏆 Hackathon Project
+### **Check Transaction Status**
+```bash
+cd scripts
 
-This project was built for ETHGlobal hackathons, demonstrating:
+# Verify specific transaction
+node verify_base_sepolia_tx.js 0x[transaction_hash]
 
-- **Innovation**: First Sui + 1inch Fusion+ integration
-- **User Experience**: Intuitive cross-chain swaps
-- **Technical Excellence**: Secure, efficient implementation
-- **Mass Adoption**: Simple UI for complex DeFi
+# Test current configuration
+node test_base_sepolia.js
+```
 
-## 📞 Support
+### **Common Issues & Solutions**
 
-- **Documentation**: [Sui Docs](https://docs.sui.io/)
-- **1inch Fusion+**: [Whitepaper](https://1inch.io/assets/1inch-fusion-plus.pdf)
-- **Issues**: GitHub Issues
-- **Discord**: Sui Developer Community
+#### **"Insufficient Balance" Error**
+```bash
+# Solution: Get more testnet tokens
+# Base Sepolia: https://www.alchemy.com/faucets/base-sepolia
+# Sui Testnet: Discord !faucet command
+```
+
+#### **"Transaction Not Found" Error**
+- **Cause**: Using fake/mock transaction hash
+- **Solution**: Ensure API server is running with latest code
+- **Verification**: Check if hash starts with '0x' and is 66 characters
+
+#### **"API Connection Failed"**
+```bash
+# Check if API server is running
+curl http://localhost:3001/api/health
+
+# Restart API server
+cd scripts
+node api-server.js
+```
+
+## 📊 **Project Structure**
+
+```
+sui-fusion-1inch-mvp/
+├── 📁 docs/htlc_escrow/          # Smart Contract
+│   ├── 📄 sources/htlc_escrow.move   # HTLC implementation
+│   ├── 📄 Move.toml                  # Contract configuration  
+│   └── 📁 tests/                     # Contract tests
+├── 📁 scripts/                   # Backend & Integration
+│   ├── 📄 real_swap.js              # Core swap execution
+│   ├── 📄 api-server.js             # Express API server
+│   ├── 📄 verify_base_sepolia_tx.js # Transaction verification
+│   ├── 📄 test_base_sepolia_swap.js # Integration tests
+│   └── 📄 bidirectional_demo.js     # Demo flows
+├── 📁 ui/                        # React Frontend
+│   ├── 📁 src/components/           # UI components
+│   ├── 📁 src/hooks/               # React hooks
+│   ├── 📁 src/services/            # API integration
+│   └── 📄 package.json             # UI dependencies
+├── 📄 .env.example               # Environment template
+├── 📄 README.md                  # This file
+└── 📄 package.json               # Root dependencies
+```
+
+## 🎯 **Key Features Demonstrated**
+
+### **✅ Real Blockchain Integration**
+- **Sui Testnet**: Actual HTLC contract deployment and execution
+- **Base Sepolia**: Real ETH transactions with confirmations
+- **Explorer Verification**: All transactions visible on testnet explorers
+
+### **✅ 1inch Fusion+ Integration**
+- **Official SDK**: Using @1inch/fusion-sdk package
+- **Real API**: Connects to 1inch Fusion+ endpoints
+- **Order Management**: Create, monitor, and execute orders
+
+### **✅ Security Features**
+- **Hashlock Protection**: Funds only released with correct secret
+- **Timelock Safety**: Automatic refund after expiration
+- **Transaction Confirmation**: Waits for onchain confirmation
+- **Error Handling**: Comprehensive error messages and recovery
+
+### **✅ User Experience**
+- **Real-time Updates**: Live transaction status
+- **Explorer Links**: Direct links to view transactions
+- **Error Messages**: Clear instructions for common issues
+- **Mobile Responsive**: Works on all devices
+
+## 🔗 **Explorer Links**
+
+### **Testnet Explorers**
+- **Sui Testnet**: https://suiscan.xyz/testnet/
+- **Base Sepolia**: https://sepolia.basescan.org/
+
+### **Recent Transactions**
+- **Base Sepolia Example**: https://sepolia.basescan.org/tx/0xd2482181aca2dc0f123b7949afd48667d219d3ecc411c9ddef0fbb277099173e
+
+## 🏆 **Achievement Summary**
+
+This MVP successfully demonstrates:
+
+1. **✅ Real Cross-Chain Execution**: Actual transactions on Sui and Base Sepolia
+2. **✅ HTLC Implementation**: Secure hashlock/timelock mechanisms in Move
+3. **✅ 1inch Integration**: Official Fusion+ SDK with real API calls
+4. **✅ Bidirectional Swaps**: SUI↔ETH in both directions
+5. **✅ UI Integration**: React interface with real transaction tracking
+6. **✅ Verification**: All transactions verifiable on testnet explorers
+
+**All requirements met with verifiable onchain evidence! 🎉**
+
+## 📞 **Support & Contributing**
+
+### **Getting Help**
+- Check console logs for detailed error messages
+- Verify testnet balances on both chains
+- Use verification scripts to debug issues
+- Review transaction status on explorers
+
+### **Contributing**
+- Fork the repository
+- Create feature branch
+- Test on testnet only
+- Submit pull request with description
+
+### **Security Note**
+⚠️ **This is testnet code only. Never use mainnet private keys or real funds.**
 
 ---
 
-**Built with ❤️ for the Sui ecosystem** 
+*Built with ❤️ for the Sui ecosystem and 1inch community, from LATAM to the world.* 
