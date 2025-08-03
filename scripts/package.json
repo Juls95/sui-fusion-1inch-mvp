@@ -17,12 +17,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^17.2.1",
-    "ethers": "^6.15.0",
+    "@1inch/fusion-sdk": "^2.3.6",
     "@mysten/sui": "^1.15.0",
     "axios": "^1.7.7",
+    "cors": "^2.8.5",
     "debug": "^4.3.4",
-    "express": "^4.19.2",
-    "cors": "^2.8.5"
+    "dotenv": "^17.2.1",
+    "ethers": "^6.15.0",
+    "express": "^4.19.2"
   }
 }
